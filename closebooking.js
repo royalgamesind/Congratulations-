@@ -51,7 +51,17 @@ async function closeBookings() {
   console.log("Done.");
 }
 
-closeBookings();
+
+closeBookings()
+  .then(() => {
+    console.log("Script finished successfully.");
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error("Error:", error);
+    process.exit(1);
+  });
+
 
 
 

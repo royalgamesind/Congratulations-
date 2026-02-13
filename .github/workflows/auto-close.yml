@@ -20,16 +20,20 @@ jobs:
 
       - name: Install Firebase Admin
         run: npm install firebase-admin
-              - name: Decode Firebase key
-        run: |
-              echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 --decode > serviceAccount.json
 
+      # Convert secret to JSON file
+      - name: Decode Firebase key
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 --decode > serviceAccount.json
+
+      # Tell Node where credentials are
       - name: Set Google Credentials
         run: echo "GOOGLE_APPLICATION_CREDENTIALS=serviceAccount.json" >> $GITHUB_ENV
-        
 
+      # Run your script
       - name: Run booking closer
-        env:
-          
         run: node closeBookings.js
         
+
+
+

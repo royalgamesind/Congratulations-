@@ -1,48 +1,49 @@
 const admin = require("firebase-admin");
 
-// get firebase key from github secret
+// load firebase key
 const serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://YOUR-PROJECT-ID-default-rtdb.firebaseio.com"
 });
 
-const db = admin.firestore();
+const db = admin.database();
 
 async function closeBookings() {
-  const today = new Date();
-  
-  const snapshot = await db.collection("bookings")
-    .where("status", "==", "Active")
-    .get();
+  const today = new Date().getTime();
 
-  if (snapshot.empty) {
-    console.log("No active bookings");
+  const ref = db.ref("bookings");
+
+  const snapshot = await ref.once("value");
+
+  if (!snapshot.exists()) {
+    console.log("No bookings found");
     return;
   }
 
-  const batch = db.batch();
+  const updates = {};
 
-  snapshot.forEach(doc => {
-    const data = doc.data();
+  snapshot.forEach(child => {
+    const data = child.val();
 
-    if (!data.endDate) return;
+    if (!data.endDate || data.status !== "Active") return;
 
-    const endDate = new Date(data.endDate);
+    const endDate = new Date(data.endDate).getTime();
 
-    // if booking finished
     if (today > endDate) {
-      const ref = db.collection("bookings").doc(doc.id);
-      batch.update(ref, {
-        status: "Completed",
-        autoClosed: true
-      });
-      console.log("Closed booking:", doc.id);
+      updates[child.key + "/status"] = "Completed";
+      updates[child.key + "/autoClosed"] = true;
+      console.log("Closed:", child.key);
     }
   });
 
-  await batch.commit();
+  await ref.update(updates);
+
   console.log("Finished checking bookings");
 }
 
 closeBookings();
+
+
+

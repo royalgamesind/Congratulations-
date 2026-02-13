@@ -32,7 +32,7 @@ jobs:
 
       # Run your script
       - name: Run booking closer
-        run: node closeBookings.js
+        run: node closebookings.js
         
 
 

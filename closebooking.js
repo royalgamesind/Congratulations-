@@ -1,49 +1,59 @@
 const admin = require("firebase-admin");
+const fs = require("fs");
 
-// load firebase key
-const serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
+// load service account
+const serviceAccount = JSON.parse(
+  fs.readFileSync("serviceAccount.json", "utf8")
+);
 
+// initialize firebase
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://royalgamesproject-default-rtdb.asia-southeast1.firebasedatabase.app "
+  databaseURL: "https://royalgamesproject-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 
 const db = admin.database();
 
 async function closeBookings() {
-  const today = new Date().getTime();
+  console.log("Checking bookings...");
 
-  const ref = db.ref("bookings");
-
-  const snapshot = await ref.once("value");
+  const snapshot = await db.ref("bookings").once("value");
 
   if (!snapshot.exists()) {
     console.log("No bookings found");
     return;
   }
 
-  const updates = {};
+  const today = new Date();
+  const todayTime = today.getTime();
 
   snapshot.forEach(child => {
-    const data = child.val();
+    const booking = child.val();
 
-    if (!data.endDate || data.status !== "Active") return;
+    if (booking.status !== "Active") return;
 
-    const endDate = new Date(data.endDate).getTime();
+    const startDate = new Date(booking.startDate);
+    const days = parseInt(booking.days);
 
-    if (today > endDate) {
-      updates[child.key + "/status"] = "Completed";
-      updates[child.key + "/autoClosed"] = true;
-      console.log("Closed:", child.key);
+    // booking end date
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + days);
+
+    if (todayTime >= endDate.getTime()) {
+      console.log("Completing booking:", booking.customerID);
+
+      db.ref("bookings/" + booking.customerID).update({
+        status: "Completed"
+      });
     }
   });
 
-  await ref.update(updates);
-
-  console.log("Finished checking bookings");
+  console.log("Done.");
 }
 
 closeBookings();
+
+
 
 
 

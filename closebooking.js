@@ -5,7 +5,7 @@ const serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://YOUR-PROJECT-ID-default-rtdb.firebaseio.com"
+  databaseURL: "https://royalgamesproject-default-rtdb.asia-southeast1.firebasedatabase.app "
 });
 
 const db = admin.database();
